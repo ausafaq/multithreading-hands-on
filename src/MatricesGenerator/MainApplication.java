@@ -124,9 +124,17 @@ public class MainApplication {
         private Queue<MatricesPair> queue = new LinkedList<>();
         private boolean isEmpty = true;
         private boolean isTerminate = false;
+        private static final int CAPACITY = 5;
 
         // Called by the producer
         public synchronized void add(MatricesPair matricesPair) {
+            while(queue.size() == CAPACITY) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
             queue.add(matricesPair);
             isEmpty = false;
             notify();
@@ -134,6 +142,7 @@ public class MainApplication {
 
         // Called by the consumer
         public synchronized MatricesPair remove() {
+            MatricesPair matricesPair = null;
             while (isEmpty && !isTerminate) {
                 try {
                     wait();
@@ -152,7 +161,11 @@ public class MainApplication {
 
             System.out.println("Queue size: " + queue.size());
 
-            return queue.remove();
+            matricesPair = queue.remove();
+            if(queue.size() == CAPACITY - 1) {
+                notifyAll();
+            }
+            return matricesPair;
         }
 
         // Called by the producer to let consumer terminate it's thread
